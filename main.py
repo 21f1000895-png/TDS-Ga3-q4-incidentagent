@@ -363,9 +363,15 @@ async def create_incident(request: Request):
     try:
         root,evidence,diagnostics,model_name=model_plan(cleaned)
     except HTTPException: raise
+    
     except Exception as e:
-        # Do not echo input, prompts, or exception details that may contain user content.
-        raise HTTPException(422,"Planning failed; verify model configuration and incident/catalog data")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=422,
+            detail=f"Planning failed: {type(e).__name__}"
+        )
+
     trace_id,parent,incoming=trace_context(request.headers.get("traceparent"))
     state=base_state(run_id,cleaned,trace_id,parent,model_name)
     state["diagnosis"]={"rootCause":root,"evidence":evidence}
